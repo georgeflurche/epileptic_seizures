@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from datetime import datetime
 from enum import Enum, unique
-from tensorflow.keras import datasets, layers, models
+from tensorflow.keras import datasets, layers, models, optimizers
 import matplotlib.pyplot as plt
 from scipy import signal
 from sklearn.decomposition import FastICA, PCA
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         )
         patients.append(patient)
 
-    
+
     X = list()
     y = list()
     for i in range(1, 101):
@@ -67,13 +67,24 @@ if __name__ == "__main__":
             y.append([int(p.samples[f'sample_{p.tag}{add_zeros(i, 3)}']['y'])])
             y[-1].append(1 if y[-1][0] == 0 else 0)
 
+
+    #fig, (ax1, ax2) = plt.subplots(2)
+    #fig.suptitle('Reduced sample frequency')
+    #ax1.plot(X[5])
+    #ax1.set_title(f"Data extracted with 147 Hz")
+    #for j, row in enumerate(X):
+    #    X[j] = list(e for i, e in enumerate(row) if i%2==0)
+    #ax2.plot(X[5])
+    #ax2.set_title(f"Data extracted with 34.8 Hz")
+    #plt.show()
+
     X_train = np.array(X[:400])
     y_train = np.array(y[:400]).reshape(400, 2)
-    
+
     X_test = np.array(X[400:])
     y_test = np.array(y[400:]).reshape(100, 2)
 
-    
+
     x_tr_l, x_tr_w = X_train.shape
     x_ts_l, x_ts_w = X_test.shape
     input_shape = (x_tr_w, 1)
@@ -83,20 +94,22 @@ if __name__ == "__main__":
               input_shape=input_shape))
     model.add(layers.MaxPooling1D(pool_size=20))
     model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu'))
-    model.add(layers.MaxPooling1D(pool_size=200))
+    model.add(layers.MaxPooling1D(pool_size=20))
     model.add(layers.Dropout(0.25))
     model.add(layers.Flatten())
     model.add(layers.Dense(100, activation='relu'))
     model.add(layers.Dense(2, activation='sigmoid'))
 
-    log_dir = "logs/fit/2_conv_layer" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = "logs/fit/test_2_conv_layer" + datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=log_dir,
         histogram_freq=1)
 
     model.summary()
+    opt = optimizers.SGD(learning_rate=0.1, nesterov=True, momentum=0.9)
+    #opt = optimizers.Adam()
     model.compile(
-        optimizer='adam',
+        optimizer=opt,
         loss=tf.keras.losses.CategoricalCrossentropy(
             from_logits=False,
             label_smoothing=0,
@@ -107,10 +120,8 @@ if __name__ == "__main__":
     x_tr_l, x_tr_w = X_train.shape
     X_train = X_train.reshape(x_tr_l, x_tr_w, NOF_CHANNELS)
     x_ts_l, x_ts_w = X_test.shape
-    X_test = X_test.reshape(x_ts_l, x_ts_w, NOF_CHANNELS) 
+    X_test = X_test.reshape(x_ts_l, x_ts_w, NOF_CHANNELS)
 
     history = model.fit(
         X_train, y_train, epochs=100, validation_data=(X_test, y_test),
-        callbacks=[tensorboard_callback])
-
-
+        batch_size=64, callbacks=[tensorboard_callback])
