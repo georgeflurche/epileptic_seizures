@@ -13,7 +13,7 @@ from sklearn.decomposition import FastICA, PCA
 from defaults import *
 from data_interact import read_dataset, longest_substring, plot_sample
 from data_interact import calculate_accuracy, add_zeros
-from data_interact import associate, plot_results, save_all_images
+from data_interact import associate, plot_results, save_all_images, apply_fft
 from SignalGenerator import generate_random_signal, save_signal, read_signal
 from SignalGenerator import generate_step_signal
 
@@ -77,13 +77,13 @@ if __name__ == "__main__":
     #ax2.plot(X[5])
     #ax2.set_title(f"Data extracted with 34.8 Hz")
     #plt.show()
-
     X_train = np.array(X[:400])
     y_train = np.array(y[:400]).reshape(400, 2)
 
     X_test = np.array(X[400:])
     y_test = np.array(y[400:]).reshape(100, 2)
 
+    #X_train, X_test = apply_fft(X_train, X_test)
 
     x_tr_l, x_tr_w = X_train.shape
     x_ts_l, x_ts_w = X_test.shape
@@ -100,14 +100,14 @@ if __name__ == "__main__":
     model.add(layers.Dense(100, activation='relu'))
     model.add(layers.Dense(2, activation='sigmoid'))
 
-    log_dir = "logs/fit/test_2_conv_layer" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = "logs/fit/feature_extraction_2_conv_layer" + datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=log_dir,
         histogram_freq=1)
 
     model.summary()
     opt = optimizers.SGD(learning_rate=0.1, nesterov=True, momentum=0.9)
-    #opt = optimizers.Adam()
+    opt = optimizers.Adam()
     model.compile(
         optimizer=opt,
         loss=tf.keras.losses.CategoricalCrossentropy(
@@ -123,5 +123,5 @@ if __name__ == "__main__":
     X_test = X_test.reshape(x_ts_l, x_ts_w, NOF_CHANNELS)
 
     history = model.fit(
-        X_train, y_train, epochs=100, validation_data=(X_test, y_test),
+        X_train, y_train, epochs=1000, validation_data=(X_test, y_test),
         batch_size=64, callbacks=[tensorboard_callback])

@@ -17,7 +17,7 @@ def read_dataset(dataset_path):
     corresponding to a patient and returns a dictionary with the structure:
     {
         "sample_<sample_name1>: <samples_array1>
-        "sample_<sample_name2>: <samples_array2>        
+        "sample_<sample_name2>: <samples_array2>
         ...
     }
     '''
@@ -94,9 +94,9 @@ def plot_results(models):
 def save_all_images(data_set, out_dir=f'{os.getcwd()}/dataset_images'):
     if not os.path.exists(out_dir):
         os.system(f'mkdir {out_dir}')
-    
+
     for k, v in data_set.items():
-        plot = plt.figure()        
+        plot = plt.figure()
         plt.plot(v)
         plt.savefig(os.path.join(out_dir, f'{k}.png'))
         del plot
@@ -119,5 +119,17 @@ def add_zeros(integer, length):
         result = '0' + result
     return result
 
-
-
+def apply_fft(X_train, X_test):
+    X_train_res = []
+    X_test_res = []
+    for data in X_train:
+        signal_fft = np.fft.fft(data)
+        magnitude = np.abs(signal_fft)
+        X_train_res.append(magnitude)
+    for data in X_test:
+        signal_fft = np.fft.fft(data)
+        magnitude = np.abs(signal_fft)
+        X_test_res.append(magnitude)
+    X_train_res = np.array(X_train_res)
+    X_test_res = np.array(X_test_res)
+    return X_train_res, X_test_res
